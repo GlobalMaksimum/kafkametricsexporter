@@ -27,13 +27,13 @@ object Main extends IOApp {
         .getOrElse(s"http://${c.influx.hostPort}/write?db=${c.influx.database}&precision=ms")
       IO.fromEither(Uri.fromString(uriString)).flatMap{ influxEndPoint =>
         val groupCollector = retryWithBackoff(
-          (new ConsumerGroupCollector[IO](c.bootstrapServers, 10 seconds, "group_offsets"))
+          (new ConsumerGroupCollector[IO](c.bootstrapServers, 10 seconds, c.metricPrefix.getOrElse("group_offsets")))
             .program.evalTap(l => IO(log.debug(s"consumerGroupMetric:$l"))).through2(clientFactory)(InfluxUtils.toInflux(influxEndPoint)).compile.drain,
           5 seconds, Integer.MAX_VALUE, "GBM group collector failed with ")
-        val metricTopicExporter = retryWithBackoff(
-          (new MetricsTopicExporter[IO](c.metricConsumer.topic, c.bootstrapServers, c.metricConsumer.consumerGroup))
+        val metricTopicExporter = c.metricConsumer.map(mcc=>retryWithBackoff(
+          (new MetricsTopicExporter[IO](mcc.topic, c.bootstrapServers, mcc.consumerGroup))
             .program.evalTap(l => IO(log.debug(s"consumerMetric:$l"))).through2(clientFactory)(InfluxUtils.toInflux(influxEndPoint)).compile.drain,
-          5 seconds, Integer.MAX_VALUE, "GBM metric reporter failed with ")
+          5 seconds, Integer.MAX_VALUE, "GBM metric reporter failed with ")).getOrElse(IO.unit)
         log.debug("starting execution")
         (groupCollector, metricTopicExporter).parMapN((_, _) => ())
       }

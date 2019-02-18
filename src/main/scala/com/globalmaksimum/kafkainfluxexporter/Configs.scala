@@ -10,6 +10,6 @@ object Configs {
 
   case class MetricConsumerConfig(consumerGroup: String, topic: String)
 
-  case class ProgramConfig(bootstrapServers: String, influx: InfluxDBConfig, metricConsumer: MetricConsumerConfig)
+  case class ProgramConfig(bootstrapServers: String, influx: InfluxDBConfig, metricPrefix:Option[String],metricConsumer: Option[MetricConsumerConfig])
 
 }
