@@ -21,12 +21,12 @@ class ConfigsTest extends FlatSpec with Matchers {
   it should "parse example config" in {
     val result = loadConfigF[IO, Configs.ProgramConfig].unsafeRunSync()
     result.bootstrapServers should be (Parameters.bootstrapServers)
-    result.metricConsumer.topic should be (Parameters.topics.head)
-    result.metricConsumer.consumerGroup should be (Parameters.consumerGroup)
-    result.influx.database should be (Parameters.influxDB)
-    result.influx.hostPort should be (Parameters.influxHost)
+    result.metricConsumer.get.topic should be (Parameters.topics.head)
+    result.metricConsumer.get.consumerGroup should be (Parameters.consumerGroup)
+    result.influx.get.database should be (Parameters.influxDB)
+    result.influx.get.hostPort should be (Parameters.influxHost)
 
-    result.influx.auth shouldBe Some(Authentication("myuser","mypassword"))
+    result.influx.get.auth shouldBe Some(Authentication("myuser","mypassword"))
   }
 
 }

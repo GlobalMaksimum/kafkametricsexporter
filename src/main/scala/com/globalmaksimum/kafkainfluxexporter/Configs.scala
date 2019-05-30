@@ -8,8 +8,11 @@ object Configs {
 
   case class InfluxDBConfig(hostPort: String, database: String, auth: Option[Authentication])
 
+  case class PrometheusConfig(prefix: String, port: Int)
+
   case class MetricConsumerConfig(consumerGroup: String, topic: String)
 
-  case class ProgramConfig(bootstrapServers: String, influx: InfluxDBConfig, metricPrefix:Option[String],metricConsumer: Option[MetricConsumerConfig])
+  case class ProgramConfig(bootstrapServers: String, influx: Option[InfluxDBConfig], prometheus: Option[PrometheusConfig], metricPrefix: Option[String],
+                           metricConsumer: Option[MetricConsumerConfig], kerberosEnabled: Option[Boolean])
 
 }

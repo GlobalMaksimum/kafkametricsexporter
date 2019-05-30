@@ -5,20 +5,21 @@ name := "kafkainfluxexporter"
 version := "0.2"
 
 scalaVersion := "2.12.8"
-val http4sVersion = "0.20.0-M4"
+val http4sVersion = "0.20.0"
 
 
 libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-blaze-server" % http4sVersion,
-  "org.http4s" %% "http4s-blaze-client" % http4sVersion
+  "org.http4s" %% "http4s-blaze-client" % http4sVersion,
+  "org.http4s" %% "http4s-prometheus-metrics" % http4sVersion
 )
 
-libraryDependencies += "org.apache.kafka" % "kafka-clients" % "2.0.1"
-libraryDependencies += "com.ovoenergy" %% "fs2-kafka" % "0.18.0"
+libraryDependencies += "org.apache.kafka" % "kafka-clients" % "2.1.1"
+libraryDependencies += "com.ovoenergy" %% "fs2-kafka" % "0.19.9"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
-libraryDependencies += "com.github.pureconfig" %% "pureconfig" % "0.10.1"
-libraryDependencies += "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.10.1"
+libraryDependencies += "com.github.pureconfig" %% "pureconfig" % "0.11.0"
+libraryDependencies += "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.11.0"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % Test
 
 
