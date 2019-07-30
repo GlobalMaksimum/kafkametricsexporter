@@ -6,27 +6,53 @@ import cats.effect.IO
 import io.prometheus.client.{Collector, CounterMetricFamily}
 import org.log4s.getLogger
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-class KafkaCollector(collector: ConsumerGroupCollector[IO],prefix:String) extends Collector {
+
+class KafkaCollector(collector: ConsumerGroupCollector[IO], prefix: String) extends Collector {
   val log = getLogger
+
+  import scala.collection.JavaConverters._
+
   override def collect(): util.List[Collector.MetricFamilySamples] = {
-    val grouped = collector.collectAll.map(_.groupBy(_.topic).toList)
-    val scalaList = try {
-      grouped.map { topicList =>
-        topicList.map { case (topic, list) =>
-          val labelList = util.Arrays.asList("partition", "groupId", "value")
-          list.foldLeft(new CounterMetricFamily(s"$prefix$topic", "topic info", labelList)) { case (counters, lagInfo) =>
-            counters.addMetric(util.Arrays.asList(lagInfo.partition.toString, lagInfo.groupId, "groupOffset"), lagInfo.groupOffset)
-            counters.addMetric(util.Arrays.asList(lagInfo.partition.toString, lagInfo.groupId, "latestOffset"), lagInfo.latestOffset)
-          }
-        }
-      }.unsafeRunSync()
+    try {
+      val (lagInfo, sizeInfo) = collector.collectLagInfo.unsafeRunSync()
+
+      if(log.isDebugEnabled){
+        lagInfo.foreach(i=>log.debug(i.toString))
+        sizeInfo.foreach(i=>log.debug(i.toString))
+      }
+
+      val groupOffset = lagInfo.foldLeft(new CounterMetricFamily(
+        s"kafka_consumergroup_group_offset",
+        "The offset of the last consumed offset for this partition in this topic partition for this group.",
+        List("cluster", "group", "topic", "partition").asJava)) { (family, l) =>
+        family.addMetric(List(prefix, l.groupId, l.topic, l.partition.toString).asJava, l.groupOffset)
+      }
+      val groupOffsetLag = lagInfo.foldLeft(new CounterMetricFamily(
+        s"kafka_consumergroup_group_lag",
+        "consumer group lags",
+        List("cluster", "group", "topic", "partition").asJava)) { (family, l) =>
+        family.addMetric(List(prefix, l.groupId, l.topic, l.partition.toString).asJava, l.latestOffset - l.groupOffset)
+      }
+
+      val latestOffset = sizeInfo.foldLeft(new CounterMetricFamily(
+        s"kafka_partition_latest_offset",
+        "The latest offset available for topic partition.",
+        List("cluster", "topic", "partition").asJava)) { (family, l) =>
+        family.addMetric(List(prefix, l.topic, l.partition.toString).asJava, l.endOffset)
+      }
+
+      val earliestOffset = sizeInfo.foldLeft(new CounterMetricFamily(
+        s"kafka_partition_earliest_offset",
+        "The latest offset available for topic partition.",
+        List("cluster", "topic", "partition").asJava)) { (family, l) =>
+        family.addMetric(List(prefix, l.topic, l.partition.toString).asJava, l.beginningOffset)
+      }
+
+
+      util.Arrays.asList(List(groupOffset, groupOffsetLag, latestOffset, earliestOffset).toArray: _*)
     } catch {
-      case t=> log.error(t)("error")
-        List.empty
+      case t => log.error(t)("error")
+        List.empty.asJava
     }
-    log.info("collection finished")
-    java.util.Arrays.asList(scalaList.toArray: _*)
   }
 }
