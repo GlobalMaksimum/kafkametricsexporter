@@ -2,10 +2,10 @@ import NativePackagerHelper._
 import Keys._
 name := "kafkainfluxexporter"
 
-version := "0.3.7"
+version := "0.3.8"
 
 scalaVersion := "2.12.8"
-val http4sVersion = "0.20.0"
+val http4sVersion = "0.20.15"
 
 
 libraryDependencies ++= Seq(
